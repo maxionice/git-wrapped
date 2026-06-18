@@ -1,0 +1,8 @@
+# Compiled binaries
+/git-wrapped
+/git-wrapped.exe
+*.exe
+
+# Go test/coverage artifacts
+*.out
+coverage.*
