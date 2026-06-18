@@ -17,6 +17,7 @@ git-wrapped --year 2025     # a specific year
 git-wrapped --year 0        # all time
 git-wrapped --all                # every author, not just you
 git-wrapped --author jane@x.com  # a specific author by email
+git-wrapped --top 10             # entries per ranked list (default 5)
 git-wrapped --no-color           # plain output (also honors NO_COLOR)
 git-wrapped --json               # machine-readable JSON instead of the report
 ```

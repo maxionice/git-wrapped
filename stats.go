@@ -45,8 +45,13 @@ type Count struct {
 }
 
 // computeStats folds a slice of commits into a Stats summary. The commits need
-// not be sorted; computeStats orders what it needs internally.
-func computeStats(commits []Commit, year int) Stats {
+// not be sorted; computeStats orders what it needs internally. top bounds the
+// length of each ranked list (files, extensions, co-authors); values below 1
+// are treated as 1.
+func computeStats(commits []Commit, year, top int) Stats {
+	if top < 1 {
+		top = 1
+	}
 	s := Stats{Year: year}
 	if len(commits) == 0 {
 		return s
@@ -106,9 +111,9 @@ func computeStats(commits []Commit, year int) Stats {
 
 	s.FilesTouched = len(uniqueFiles)
 	s.ActiveDays = len(dayCounts)
-	s.TopFiles = topN(fileCounts, 5)
-	s.TopExtensions = topN(extCounts, 5)
-	s.TopCoAuthors = topNNamed(coAuthorCounts, coAuthorKeyToName, 5)
+	s.TopFiles = topN(fileCounts, top)
+	s.TopExtensions = topN(extCounts, top)
+	s.TopCoAuthors = topNNamed(coAuthorCounts, coAuthorKeyToName, top)
 	s.Author = topLabel(authorCounts)
 	s.LongestStreak, s.StreakStart, s.StreakEnd = longestStreak(dayCounts)
 	s.DayCounts = dayCounts

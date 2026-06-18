@@ -92,7 +92,7 @@ func TestComputeStatsBasic(t *testing.T) {
 		mk(2, 9, 5, 1, "a.go"),
 		mk(3, 14, 0, 3, "c.py"),
 	}
-	s := computeStats(commits, 2026)
+	s := computeStats(commits, 2026, 5)
 	if s.TotalCommits != 3 {
 		t.Errorf("commits = %d, want 3", s.TotalCommits)
 	}
@@ -136,7 +136,7 @@ func TestCoAuthorAggregation(t *testing.T) {
 			// Same Jane (different case) plus a duplicate within one commit.
 			CoAuthors: []string{"jane doe <JANE@X.com>", "jane doe <jane@x.com>"}},
 	}
-	s := computeStats(commits, 2026)
+	s := computeStats(commits, 2026, 5)
 	if len(s.TopCoAuthors) != 2 {
 		t.Fatalf("co-authors = %+v, want 2 distinct", s.TopCoAuthors)
 	}
@@ -150,8 +150,23 @@ func TestCoAuthorAggregation(t *testing.T) {
 }
 
 func TestComputeStatsEmpty(t *testing.T) {
-	s := computeStats(nil, 2026)
+	s := computeStats(nil, 2026, 5)
 	if s.TotalCommits != 0 || s.FilesTouched != 0 {
 		t.Errorf("empty stats not zero: %+v", s)
+	}
+}
+
+func TestComputeStatsTopBounds(t *testing.T) {
+	mk := func(files ...string) Commit {
+		return Commit{Date: time.Date(2026, 6, 1, 9, 0, 0, 0, time.Local), Files: files}
+	}
+	commits := []Commit{mk("a.go"), mk("b.go"), mk("c.go"), mk("d.go")}
+
+	if got := computeStats(commits, 2026, 2); len(got.TopFiles) != 2 {
+		t.Errorf("top=2 gave %d files, want 2", len(got.TopFiles))
+	}
+	// top below 1 is clamped to 1, not treated as "unbounded" or zero.
+	if got := computeStats(commits, 2026, 0); len(got.TopFiles) != 1 {
+		t.Errorf("top=0 gave %d files, want clamped to 1", len(got.TopFiles))
 	}
 }

@@ -13,6 +13,7 @@ func main() {
 		year    = flag.Int("year", time.Now().Year(), "calendar year to summarize (0 = all time)")
 		all     = flag.Bool("all", false, "include every author (default: only your commits)")
 		author  = flag.String("author", "", "summarize a specific author by email (overrides the default)")
+		top     = flag.Int("top", 5, "number of entries to show in ranked lists")
 		noColor = flag.Bool("no-color", false, "disable ANSI colors")
 		asJSON  = flag.Bool("json", false, "emit machine-readable JSON instead of the report")
 	)
@@ -40,7 +41,7 @@ func main() {
 		fatal(err.Error())
 	}
 
-	stats := computeStats(commits, *year)
+	stats := computeStats(commits, *year, *top)
 	if *all {
 		stats.Author = "everyone"
 	}
