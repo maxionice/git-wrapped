@@ -12,19 +12,24 @@ import (
 
 // Commit is a single commit with its file-change stats.
 type Commit struct {
-	Hash    string
-	Date    time.Time
-	Author  string
-	Email   string
-	Added   int
-	Removed int
-	Files   []string
+	Hash      string
+	Date      time.Time
+	Author    string
+	Email     string
+	Added     int
+	Removed   int
+	Files     []string
+	CoAuthors []string // raw "Name <email>" values from Co-authored-by trailers
 }
 
 // fieldSep is the byte we ask git to emit between pretty-format fields. Using a
 // control byte avoids collisions with anything a human would put in a name or
-// commit subject.
-const fieldSep = "\x1f"
+// commit subject. trailerSep separates individual trailer values within the
+// single trailers field.
+const (
+	fieldSep   = "\x1f"
+	trailerSep = "\x1d"
+)
 
 // gitInstalled reports whether a git binary is on PATH.
 func gitInstalled() bool {
@@ -57,7 +62,10 @@ func currentUserEmail() string {
 // limited to that calendar year. When email is non-empty only commits by that
 // author email are kept.
 func collectCommits(year int, email string) ([]Commit, error) {
-	format := strings.Join([]string{"%H", "%aI", "%aN", "%aE"}, fieldSep)
+	// The trailers field collects Co-authored-by values, one per trailer,
+	// joined by trailerSep so the header stays a single line.
+	coAuthorTrailer := "%(trailers:key=Co-authored-by,valueonly=true,separator=" + trailerSep + ")"
+	format := strings.Join([]string{"%H", "%aI", "%aN", "%aE", coAuthorTrailer}, fieldSep)
 	args := []string{
 		"log",
 		"--no-merges",
@@ -112,6 +120,13 @@ func collectCommits(year int, email string) ([]Commit, error) {
 				Date:   t,
 				Author: fields[2],
 				Email:  fields[3],
+			}
+			if len(fields) >= 5 && fields[4] != "" {
+				for _, raw := range strings.Split(fields[4], trailerSep) {
+					if raw = strings.TrimSpace(raw); raw != "" {
+						cur.CoAuthors = append(cur.CoAuthors, raw)
+					}
+				}
 			}
 			continue
 		}

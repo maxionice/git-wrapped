@@ -36,6 +36,7 @@ type jsonReport struct {
 
 	TopFiles      []Count `json:"top_files"`
 	TopExtensions []Count `json:"top_extensions"`
+	TopCoAuthors  []Count `json:"top_co_authors"`
 
 	CommitsPerActiveDay float64 `json:"commits_per_active_day"`
 	WeekendShare        float64 `json:"weekend_share"` // fraction of commits on Sat/Sun
@@ -59,6 +60,7 @@ func toJSONReport(s Stats, repo string) jsonReport {
 		ByMonth:         s.ByMonth,
 		TopFiles:        s.TopFiles,
 		TopExtensions:   s.TopExtensions,
+		TopCoAuthors:    s.TopCoAuthors,
 	}
 	if s.Year != 0 {
 		y := s.Year

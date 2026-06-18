@@ -142,6 +142,13 @@ func render(s Stats, repo string, p palette) string {
 		b.WriteString(p.dim + "  Top file types  " + p.reset + strings.Join(parts, "   ") + "\n")
 	}
 
+	if len(s.TopCoAuthors) > 0 {
+		b.WriteString("\n" + p.cyan + p.bold + "  Top collaborators\n" + p.reset)
+		for _, c := range s.TopCoAuthors {
+			b.WriteString(fmt.Sprintf("    %s%3d×%s  %s\n", p.yellow, c.N, p.reset, c.Label))
+		}
+	}
+
 	return b.String()
 }
 

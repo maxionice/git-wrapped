@@ -110,6 +110,45 @@ func TestComputeStatsBasic(t *testing.T) {
 	}
 }
 
+func TestParseIdentity(t *testing.T) {
+	cases := []struct {
+		raw, name, key string
+	}{
+		{"Jane Doe <jane@x.com>", "Jane Doe", "jane@x.com"},
+		{"Jane Doe <JANE@X.com>", "Jane Doe", "jane@x.com"},
+		{"  Bob  <bob@y.io> ", "Bob", "bob@y.io"},
+		{"<solo@z.dev>", "solo@z.dev", "solo@z.dev"},
+		{"NoEmail Name", "NoEmail Name", "noemail name"},
+	}
+	for _, c := range cases {
+		name, key := parseIdentity(c.raw)
+		if name != c.name || key != c.key {
+			t.Errorf("parseIdentity(%q) = (%q,%q), want (%q,%q)", c.raw, name, key, c.name, c.key)
+		}
+	}
+}
+
+func TestCoAuthorAggregation(t *testing.T) {
+	commits := []Commit{
+		{Date: time.Date(2026, 6, 1, 9, 0, 0, 0, time.Local), Author: "Max",
+			CoAuthors: []string{"Jane Doe <jane@x.com>", "Bob <bob@y.io>"}},
+		{Date: time.Date(2026, 6, 2, 9, 0, 0, 0, time.Local), Author: "Max",
+			// Same Jane (different case) plus a duplicate within one commit.
+			CoAuthors: []string{"jane doe <JANE@X.com>", "jane doe <jane@x.com>"}},
+	}
+	s := computeStats(commits, 2026)
+	if len(s.TopCoAuthors) != 2 {
+		t.Fatalf("co-authors = %+v, want 2 distinct", s.TopCoAuthors)
+	}
+	// Jane appears in both commits (deduped within commit 2) => 2; Bob => 1.
+	if s.TopCoAuthors[0].N != 2 || s.TopCoAuthors[0].Label != "Jane Doe" {
+		t.Errorf("top co-author = %+v, want Jane Doe x2", s.TopCoAuthors[0])
+	}
+	if s.TopCoAuthors[1].N != 1 || s.TopCoAuthors[1].Label != "Bob" {
+		t.Errorf("second co-author = %+v, want Bob x1", s.TopCoAuthors[1])
+	}
+}
+
 func TestComputeStatsEmpty(t *testing.T) {
 	s := computeStats(nil, 2026)
 	if s.TotalCommits != 0 || s.FilesTouched != 0 {
