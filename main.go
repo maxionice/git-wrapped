@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -11,6 +12,7 @@ func main() {
 	var (
 		year    = flag.Int("year", time.Now().Year(), "calendar year to summarize (0 = all time)")
 		all     = flag.Bool("all", false, "include every author (default: only your commits)")
+		author  = flag.String("author", "", "summarize a specific author by email (overrides the default)")
 		noColor = flag.Bool("no-color", false, "disable ANSI colors")
 		asJSON  = flag.Bool("json", false, "emit machine-readable JSON instead of the report")
 	)
@@ -28,12 +30,9 @@ func main() {
 		fatal("not inside a git repository — cd into one and try again.")
 	}
 
-	email := ""
-	if !*all {
-		email = currentUserEmail()
-		if email == "" {
-			fatal("git user.email is not set; pass --all to summarize every author.")
-		}
+	email, err := resolveFilter(*all, *author, currentUserEmail())
+	if err != nil {
+		fatal(err.Error())
 	}
 
 	commits, err := collectCommits(*year, email)
@@ -57,6 +56,24 @@ func main() {
 
 	p := newPalette(!*noColor && colorEnabled())
 	fmt.Print(render(stats, repoName(), p))
+}
+
+// resolveFilter decides which author-email filter to apply from the flags. An
+// empty result means "all authors". currentEmail is consulted only when neither
+// --all nor --author is given.
+func resolveFilter(all bool, author, currentEmail string) (string, error) {
+	switch {
+	case all && author != "":
+		return "", errors.New("--all and --author are mutually exclusive")
+	case all:
+		return "", nil
+	case author != "":
+		return author, nil
+	case currentEmail != "":
+		return currentEmail, nil
+	default:
+		return "", errors.New("git user.email is not set; pass --all or --author <email>")
+	}
 }
 
 func fatal(msg string) {

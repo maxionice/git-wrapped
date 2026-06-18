@@ -15,9 +15,10 @@ go build -o git-wrapped .
 git-wrapped                 # your commits in the current year
 git-wrapped --year 2025     # a specific year
 git-wrapped --year 0        # all time
-git-wrapped --all           # every author, not just you
-git-wrapped --no-color      # plain output (also honors NO_COLOR)
-git-wrapped --json          # machine-readable JSON instead of the report
+git-wrapped --all                # every author, not just you
+git-wrapped --author jane@x.com  # a specific author by email
+git-wrapped --no-color           # plain output (also honors NO_COLOR)
+git-wrapped --json               # machine-readable JSON instead of the report
 ```
 
 The `--json` output is stable, snake_case, and pipe-friendly:
@@ -27,7 +28,8 @@ git-wrapped --year 2025 --json | jq '.weekend_share, .top_files[0].label'
 ```
 
 By default it filters to your commits using `git config user.email`. Pass
-`--all` to summarize the whole team.
+`--all` to summarize the whole team, or `--author <email>` to focus on someone
+specific. `--all` and `--author` are mutually exclusive.
 
 ## What it shows
 
